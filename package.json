@@ -1,0 +1,16 @@
+{
+  "name": "geovr_backend",
+  "version": "1.0.0",
+  "description": "Backend for collection of data to display in the GeoVR application",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Nico Steffens, The GeoVR Team",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.15.2",
+    "express": "^4.14.0",
+    "request": "^2.79.0"
+  }
+}
