@@ -70,6 +70,42 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
                         }
                     });
                     break;
+                case "flag":
+                    var pictureName = countryCode + '.png'
+                    var flagString = 'http://geognos.com/api/en/countries/flag/' + pictureName;
+                    request(flagString, function (error, response, body) {
+                        if (!error && response.statusCode == 200) {
+                            fs.readFile(pictureName, function (err, data) {
+                                if (err) throw err; // Fail if the file can't be read.
+                                else {
+                                    res.writeHead(200, { 'Content-Type': 'image/png' });
+                                    res.end(data); // Send the file data to the browser.
+                                }
+                            });
+                        } else {
+                            console.log(error);
+                            res.sendStatus(500);
+                        }
+                    }).pipe(fs.createWriteStream(pictureName));
+                    break;
+                case "flag_gif":
+                    var pictureName = countryCode + '.gif'
+                    var flagString = 'http://www.geonames.org/flags/x/' + pictureName.toLowerCase();
+                    request(flagString, function (error, response, body) {
+                        if (!error && response.statusCode == 200) {
+                            fs.readFile(pictureName.toLowerCase(), function (err, data) {
+                                if (err) throw err; // Fail if the file can't be read.
+                                else {
+                                    res.writeHead(200, { 'Content-Type': 'image/gif' });
+                                    res.end(data); // Send the file data to the browser.
+                                }
+                            });
+                        } else {
+                            console.log(error);
+                            res.sendStatus(500);
+                        }
+                    }).pipe(fs.createWriteStream(pictureName.toLowerCase()));
+                    break;
             };
         }
     });
