@@ -5,7 +5,6 @@ var bodyParser = require('body-parser');
 var request = require('request');
 var fs = require('fs');
 var countriesJSON = require('./js/countries.json')
-/*var getFlag = require('../js/getFlag');*/
 
 var app = express();
 
