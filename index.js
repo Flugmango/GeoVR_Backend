@@ -4,6 +4,7 @@ var express = require('express');
 var bodyParser = require('body-parser');
 var request = require('request');
 var fs = require('fs');
+var moment = require('moment');
 var countriesJSON = require('./js/countries.json')
 
 var app = express();
@@ -37,7 +38,8 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
             console.log(countryCode);
             //full country name
             var countryName = find_in_object(countriesJSON, { code: countryCode });
-            console.log(countryName[0].name);
+            countryName = countryName[0].name;
+            console.log(countryName);
             //data queries depending on type specified in URI
             switch (type) {
                 case "temperature":
@@ -55,7 +57,18 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
                     });
                     break;
                 case "population":
-                    /** TODO */
+                    var currentDate = moment().format('YYYY-MM-DD');
+                    var popString = 'http://api.population.io:80/1.0/population/' + countryName + '/' + currentDate + '/';
+                    request(popString, function (error, response, body) {
+                        if (!error && response.statusCode == 200) {
+                            var data = JSON.parse(body);
+                            //total current country population
+                            res.json(data.total_population.population);
+                        } else {
+                            console.log(error);
+                            res.sendStatus(500);
+                        }
+                    });
                     break;
             };
         }
