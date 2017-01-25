@@ -33,9 +33,6 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
         res.sendStatus(400);
     }
 	var code =	'http://open.mapquestapi.com/nominatim/v1/reverse.php?key=' + key + '&format=json&lat=' + lat + '&lon=' + lon
-	//var code = 'http://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lon + '&addressdetails=1';
-	console.log(code);
-    //var code = 'http://scatter-otl.rhcloud.com/location?lat=' + lat + '&long=' + lon;
     request(code, function (error, response, body) {
         if (!error && response.statusCode == 200) {
             //country code
