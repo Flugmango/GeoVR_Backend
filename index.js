@@ -11,6 +11,8 @@ var app = express();
 
 // OpenWeatherMap APP ID
 var appid = '8f7256f305b8b22a4643ef43aee2ad6b';
+//mapquest KEY
+var key = 'TOY3OKYNFu7Q3arLKLlbsdMB2X0wbjri';
 
 app.listen(3000, function () {
     console.log('GeoVR Backend listening on Port 3000');
@@ -30,14 +32,17 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
         console.log('Incorrect params');
         res.sendStatus(400);
     }
-    var code = 'http://scatter-otl.rhcloud.com/location?lat=' + lat + '&long=' + lon;
+	var code =	'http://open.mapquestapi.com/nominatim/v1/reverse.php?key=' + key + '&format=json&lat=' + lat + '&lon=' + lon
+	//var code = 'http://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lon + '&addressdetails=1';
+	console.log(code);
+    //var code = 'http://scatter-otl.rhcloud.com/location?lat=' + lat + '&long=' + lon;
     request(code, function (error, response, body) {
         if (!error && response.statusCode == 200) {
             //country code
-            var countryCode = JSON.parse(body).countrycode;
+            var countryCode = JSON.parse(body).address.country_code;
             console.log(countryCode);
             //full country name
-            var countryName = find_in_object(countriesJSON, { code: countryCode });
+          var countryName = find_in_object(countriesJSON, { code: countryCode.toUpperCase() });
             countryName = countryName[0].name;
             console.log(countryName);
             //data queries depending on type specified in URI
@@ -71,7 +76,7 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
                     });
                     break;
                 case "flag":
-                    var pictureName = countryCode + '.png'
+                    var pictureName = countryCode.toUpperCase() + '.png'
                     var flagString = 'http://geognos.com/api/en/countries/flag/' + pictureName;
                     request(flagString, function (error, response, body) {
                         if (!error && response.statusCode == 200) {
