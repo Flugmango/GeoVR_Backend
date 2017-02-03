@@ -54,7 +54,7 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 			console.log(flagString)
 			request(flagString, function (error, response, body) {
 				if (!error && response.statusCode == 200) {
-					fs.readFile(pictureName.toLowerCase(), function (err, pic) {
+					fs.readFile(pictureName, function (err, pic) {
                         if (err) throw err; // Fail if the file can't be read.
 						else {
 							//data queries depending on type specified in URI
