@@ -16,7 +16,7 @@ var appid = '8f7256f305b8b22a4643ef43aee2ad6b';
 var key = 'TOY3OKYNFu7Q3arLKLlbsdMB2X0wbjri';
 
 // these are the supported formats
-var allowedTypes = ['temp', 'clouds', 'wind', 'precipitation']
+var allowedTypes = ['temp', 'pressure', 'wind', 'precipitation']
 
 app.listen(3000, function () {
 	console.log('GeoVR Backend listening on Port 3000');
@@ -162,42 +162,45 @@ app.get('/overlay/:type', function(req, res) {
 
 // return the correct image url depending on type
 function getImageUrl(type) {
-    return `http://a.tile.openweathermap.org/map/${type}/0/0/0.png`
+    //return `http://a.tile.openweathermap.org/map/${type}/0/0/0.png`
+		switch(type) {
+			case 'wind':
+			return 'http://a.maps.owm.io:8099/5735d67f5836286b0076267b/0/0/0?hash=e529bed414220dfa2559b17e3f5ca831'
+			break;
+			case 'precipitation':
+			return 'http://d.maps.owm.io:8099/57456d1237fb4e01009cbb17/0/0/0?hash=042a4b4c8ec6bc8392aabf46fa91003c'
+			break;
+			case 'pressure':
+			return 'http://a.maps.owm.io:8099/5837ee50f77ebe01008ef68d/0/0/0?hash=21d287b716923b9702c510cc84f0487a'
+			break;
+			case 'temp':
+			return 'http://d.maps.owm.io:8099/5735d67f5836286b007625cd/0/0/0?hash=e25f0f2ec89ce18affb3678f26fe7bd1'
+			break;
+		}
 }
 
 // saves image, starts image processing and sends it as a callback
 function saveImage(type, callback) {
   // getting image from url
-    request({
-        url: getImageUrl(type),
-        //make the returned body a Buffer
-        encoding: null
-    }, function(error, response, body) {
-        // we can only read the image when body is a buffer
-        if (body instanceof Buffer) {
-            // save image to directory
-            fs.writeFile(`${__dirname}/${type}.png`, body, {
-                encoding: null
-            }, function(err) {
 
-                if (err)
-                    throw err;
-                console.log('It\'s saved!');
-
-                // start reprojecting
-                reprojectImage(`${__dirname}/${type}.png`, `${__dirname}/${type}_reproj.png`, () => {
-                    if (callback && typeof(callback) === "function") {
-                        // send image output path as callback
-                        callback(`${__dirname}/${type}_reproj.png`);
-                    }
-                })
-            });
-        } else {
-            console.log('body is no buffer')
-            // retry getting the image
-            saveImage(type, callback)
+	request
+  .get(getImageUrl(type))
+	.on('response', function(response) {
+    console.log(response.statusCode) // 200
+  })
+  .on('error', function(err) {
+    console.log(err)
+  })
+  .pipe(fs.createWriteStream(`${__dirname}/${type}.png`))
+	.on('finish', function(err) {
+		// start reprojecting
+    reprojectImage(`${__dirname}/${type}.png`, `${__dirname}/${type}_reproj.png`, () => {
+        if (callback && typeof(callback) === "function") {
+            // send image output path as callback
+            callback(`${__dirname}/${type}_reproj.png`);
         }
-    });
+    })
+  })
 }
 
 // reprojects the image with GDAL
@@ -223,8 +226,8 @@ function reprojectImage(inputPath, outputPath, callback) {
         inputPath,
         `${__dirname}/temp/temp.tif`
     ], {shell: true})
-    pngToTiffTranslate.on('error', (msg) => {
-        console.log(msg)
+    pngToTiffTranslate.stderr.on('error', (buf) => {
+			console.log(String(buf));
     })
     pngToTiffTranslate.on('exit', (code, signal) => {
         // after successful translation, start transformation to 4326
@@ -239,16 +242,16 @@ function reprojectImage(inputPath, outputPath, callback) {
             `${__dirname}/temp/temp.tif`,
             `${__dirname}/temp/output.tif`
         ], {shell: true})
-        reprojection.on('error', (msg) => {
-            console.log(msg)
+        reprojection.stderr.on('error', (msg) => {
+            console.log(String(buf));
         })
         reprojection.on('exit', (code, signal) => {
             // after successful reprojection, translate back to png
             var backToPNG = child_process.spawn('gdal_translate', [
                 '-of', 'PNG', `${__dirname}/temp/output.tif`, outputPath
             ], {shell: true})
-            backToPNG.on('error', (msg) => {
-                console.log(msg)
+            backToPNG.stderr.on('error', (msg) => {
+                console.log(String(buf));
             })
             backToPNG.on('exit', (code, signal) => {
                 // delete temp directory here
