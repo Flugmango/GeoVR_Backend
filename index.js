@@ -111,12 +111,10 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 									var dates = [];
 									for (i = -3; i < 4; i++) {
 										dates.push(moment().add(i, 'years').format('YYYY-MM-DD'));
-										/*console.log(dates[i+3]);*/
 									}
 									var queries = [];
 									for (i = 0; i < 7; i++) {
 										queries.push('http://api.population.io:80/1.0/population/' + countryName + '/' + dates[i] + '/');
-										/*console.log(queries[i]);*/
 									}
 									var pops = [];
 									completedRequests = 0;
@@ -130,11 +128,8 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 													//plotly graph creation
 													var data = { x: [], y: [], type: 'scatter' };
 													for (i in dates) {
-														/*data.x.push(moment(dates[i], "YYYY-MM-DD").year());*/
 														data.x.push(moment(dates[i], "YYYY-MM-DD HH:MM:SS"));
-														console.log(data.x[i]);
 														data.y.push(pops[i]);
-														console.log(pops[i]);
 													}
 													var figure = { 'data': [data] };
 													var imgOpts = {
@@ -157,25 +152,15 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 													});
 												}
 
-
-												/*var data = JSON.parse(body);*/
-												//total current country population
-												/*res.json(data.total_population.population);*/
-
 											} else {
 												console.log(error);
 												res.sendStatus(500);
 											}
 										});
 									}
-									/*var currentDate = moment().format('YYYY-MM-DD');*/
-									/*var popString = 'http://api.population.io:80/1.0/population/' + countryName + '/' + currentDate + '/';*/
 
 									break;
 							};
-							/*                                  res.writeHead(200, { 'Content-Type': 'image/gif' });*/
-							/*console.log(temperature);*/
-							/*res.end(data);*/ // Send the file data to the browser.
 						}
 					});
 				} else {
