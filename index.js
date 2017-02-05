@@ -14,6 +14,10 @@ var app = express();
 var appid = '8f7256f305b8b22a4643ef43aee2ad6b';
 //mapquest KEY
 var key = 'TOY3OKYNFu7Q3arLKLlbsdMB2X0wbjri';
+//plotly auth
+var plotlyId = 'K0Pqs6lRkCxHjyWXtT2s';
+var username = 'Flugmango';
+var plotly = require('plotly')(username, plotlyId);
 
 // these are the supported formats
 var allowedTypes = ['temp', 'pressure', 'wind', 'precipitation']
@@ -43,7 +47,7 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 			var countryCode = JSON.parse(body).address.country_code;
 			console.log(countryCode);
 			//full country name
-			var countryName = find_in_object(countriesJSON, {code: countryCode.toUpperCase()});
+			var countryName = find_in_object(countriesJSON, { code: countryCode.toUpperCase() });
 			countryName = countryName[0].name;
 			console.log(countryName);
 
@@ -55,7 +59,7 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 			request(flagString, function (error, response, body) {
 				if (!error && response.statusCode == 200) {
 					fs.readFile(pictureName, function (err, pic) {
-                        if (err) throw err; // Fail if the file can't be read.
+						if (err) throw err; // Fail if the file can't be read.
 						else {
 							//data queries depending on type specified in URI
 							switch (type) {
@@ -75,9 +79,9 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 												//var path = require('path');
 												//var http = require('http');
 												var Canvas = require('canvas')
-														, Image = Canvas.Image
-														, canvas = new Canvas(960, 540)
-														, ctx = canvas.getContext('2d');
+													, Image = Canvas.Image
+													, canvas = new Canvas(960, 540)
+													, ctx = canvas.getContext('2d');
 
 												var img = new Image();
 												img.src = new Buffer(pic, 'base64');
@@ -104,20 +108,71 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 									});
 									break;
 								case "population":
-									var currentDate = moment().format('YYYY-MM-DD');
-									var popString = 'http://api.population.io:80/1.0/population/' + countryName + '/' + currentDate + '/';
-									request(popString, function (error, response, body) {
-										if (!error && response.statusCode == 200) {
-											var data = JSON.parse(body);
-											//total current country population
-											res.json(data.total_population.population);
-										} else {
-											console.log(error);
-											res.sendStatus(500);
-										}
-									});
+									var dates = [];
+									for (i = -3; i < 4; i++) {
+										dates.push(moment().add(i, 'years').format('YYYY-MM-DD'));
+										/*console.log(dates[i+3]);*/
+									}
+									var queries = [];
+									for (i = 0; i < 7; i++) {
+										queries.push('http://api.population.io:80/1.0/population/' + countryName + '/' + dates[i] + '/');
+										/*console.log(queries[i]);*/
+									}
+									var pops = [];
+									completedRequests = 0;
+									for (i in dates) {
+										request(queries[i], function (error, response, body) {
+											if (!error && response.statusCode == 200) {
+												var data = JSON.parse(body);
+												pops.push(data.total_population.population);
+												completedRequests++;
+												if (completedRequests == queries.length) {
+													//plotly graph creation
+													var data = { x: [], y: [], type: 'scatter' };
+													for (i in dates) {
+														/*data.x.push(moment(dates[i], "YYYY-MM-DD").year());*/
+														data.x.push(moment(dates[i], "YYYY-MM-DD HH:MM:SS"));
+														console.log(data.x[i]);
+														data.y.push(pops[i]);
+														console.log(pops[i]);
+													}
+													var figure = { 'data': [data] };
+													var imgOpts = {
+														format: 'png',
+														width: 768,
+														height: 432
+													};
+													plotly.getImage(figure, imgOpts, function (err, imageStream) {
+														if (err) return console.log(err);
+														var fileStream = fs.createWriteStream('graph.png');
+														imageStream.pipe(fileStream).on('finish', function () {
+															var graph = fs.readFile('graph.png', function (err, graph) {
+																if (!err) {
+																	res.writeHead(200, { 'Content-Type': 'image/png' });
+																	res.write(graph);
+																	res.end();
+																}
+															});
+														});
+													});
+												}
+
+
+												/*var data = JSON.parse(body);*/
+												//total current country population
+												/*res.json(data.total_population.population);*/
+
+											} else {
+												console.log(error);
+												res.sendStatus(500);
+											}
+										});
+									}
+									/*var currentDate = moment().format('YYYY-MM-DD');*/
+									/*var popString = 'http://api.population.io:80/1.0/population/' + countryName + '/' + currentDate + '/';*/
+
 									break;
-                            };
+							};
 							/*                                  res.writeHead(200, { 'Content-Type': 'image/gif' });*/
 							/*console.log(temperature);*/
 							/*res.end(data);*/ // Send the file data to the browser.
@@ -144,139 +199,139 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 	};
 });
 
-app.get('/overlay/:type', function(req, res) {
-    var type = req.params.type;
+app.get('/overlay/:type', function (req, res) {
+	var type = req.params.type;
 
-    // only search image when type is supported
-    if (allowedTypes.includes(type))
-        saveImage(type, (outputPath) => {
-            var img = fs.readFileSync(outputPath);
-            res.writeHead(200, {'Content-Type': 'image/png'});
-            res.end(img, 'binary');
-        })
+	// only search image when type is supported
+	if (allowedTypes.includes(type))
+		saveImage(type, (outputPath) => {
+			var img = fs.readFileSync(outputPath);
+			res.writeHead(200, { 'Content-Type': 'image/png' });
+			res.end(img, 'binary');
+		})
 
-    else
-        res.status(500).send('Type not allowed');
-    }
+	else
+		res.status(500).send('Type not allowed');
+}
 );
 
 // return the correct image url depending on type
 function getImageUrl(type) {
-    //return `http://a.tile.openweathermap.org/map/${type}/0/0/0.png`
-		switch(type) {
-			case 'wind':
+	//return `http://a.tile.openweathermap.org/map/${type}/0/0/0.png`
+	switch (type) {
+		case 'wind':
 			return 'http://a.maps.owm.io:8099/5735d67f5836286b0076267b/0/0/0?hash=e529bed414220dfa2559b17e3f5ca831'
 			break;
-			case 'precipitation':
+		case 'precipitation':
 			return 'http://d.maps.owm.io:8099/57456d1237fb4e01009cbb17/0/0/0?hash=042a4b4c8ec6bc8392aabf46fa91003c'
 			break;
-			case 'pressure':
+		case 'pressure':
 			return 'http://a.maps.owm.io:8099/5837ee50f77ebe01008ef68d/0/0/0?hash=21d287b716923b9702c510cc84f0487a'
 			break;
-			case 'temp':
+		case 'temp':
 			return 'http://d.maps.owm.io:8099/5735d67f5836286b007625cd/0/0/0?hash=e25f0f2ec89ce18affb3678f26fe7bd1'
 			break;
-		}
+	}
 }
 
 // saves image, starts image processing and sends it as a callback
 function saveImage(type, callback) {
-  // getting image from url
+	// getting image from url
 
 	request
-  .get(getImageUrl(type))
-	.on('response', function(response) {
-    console.log(response.statusCode) // 200
-  })
-  .on('error', function(err) {
-    console.log(err)
-  })
-  .pipe(fs.createWriteStream(`${__dirname}/${type}.png`))
-	.on('finish', function(err) {
-		// start reprojecting
-    reprojectImage(`${__dirname}/${type}.png`, `${__dirname}/${type}_reproj.png`, () => {
-        if (callback && typeof(callback) === "function") {
-            // send image output path as callback
-            callback(`${__dirname}/${type}_reproj.png`);
-        }
-    })
-  })
+		.get(getImageUrl(type))
+		.on('response', function (response) {
+			console.log(response.statusCode) // 200
+		})
+		.on('error', function (err) {
+			console.log(err)
+		})
+		.pipe(fs.createWriteStream(`${__dirname}/${type}.png`))
+		.on('finish', function (err) {
+			// start reprojecting
+			reprojectImage(`${__dirname}/${type}.png`, `${__dirname}/${type}_reproj.png`, () => {
+				if (callback && typeof (callback) === "function") {
+					// send image output path as callback
+					callback(`${__dirname}/${type}_reproj.png`);
+				}
+			})
+		})
 }
 
 // reprojects the image with GDAL
 function reprojectImage(inputPath, outputPath, callback) {
-    // create temp directory
-    fs.mkdir(`${__dirname}/temp`)
+	// create temp directory
+	fs.mkdir(`${__dirname}/temp`)
 
-    // sorry, now comes the quick and dirty way...
+	// sorry, now comes the quick and dirty way...
 
-    // start translation from png to tiff
-    var pngToTiffTranslate = child_process.spawn('gdal_translate', [
-        '-of',
-        'Gtiff',
-        '-co',
-        '"tfw=yes"',
-        '-a_ullr',
-        '-20037508.3427892',
-        '20036051.9193368',
-        '20037508.3427892',
-        '-20036051.9193368',
-        '-a_srs',
-        '"EPSG:3857"',
-        inputPath,
-        `${__dirname}/temp/temp.tif`
-    ], {shell: true})
-    pngToTiffTranslate.stderr.on('error', (buf) => {
+	// start translation from png to tiff
+	var pngToTiffTranslate = child_process.spawn('gdal_translate', [
+		'-of',
+		'Gtiff',
+		'-co',
+		'"tfw=yes"',
+		'-a_ullr',
+		'-20037508.3427892',
+		'20036051.9193368',
+		'20037508.3427892',
+		'-20036051.9193368',
+		'-a_srs',
+		'"EPSG:3857"',
+		inputPath,
+		`${__dirname}/temp/temp.tif`
+	], { shell: true })
+	pngToTiffTranslate.stderr.on('error', (buf) => {
+		console.log(String(buf));
+	})
+	pngToTiffTranslate.on('exit', (code, signal) => {
+		// after successful translation, start transformation to 4326
+		var reprojection = child_process.spawn('gdalwarp', [
+			'-s_srs',
+			'EPSG:3857',
+			'-t_srs',
+			'EPSG:4326',
+			'-ts',
+			'256',
+			'128',
+			`${__dirname}/temp/temp.tif`,
+			`${__dirname}/temp/output.tif`
+		], { shell: true })
+		reprojection.stderr.on('error', (msg) => {
 			console.log(String(buf));
-    })
-    pngToTiffTranslate.on('exit', (code, signal) => {
-        // after successful translation, start transformation to 4326
-        var reprojection = child_process.spawn('gdalwarp', [
-            '-s_srs',
-            'EPSG:3857',
-            '-t_srs',
-            'EPSG:4326',
-            '-ts',
-            '256',
-            '128',
-            `${__dirname}/temp/temp.tif`,
-            `${__dirname}/temp/output.tif`
-        ], {shell: true})
-        reprojection.stderr.on('error', (msg) => {
-            console.log(String(buf));
-        })
-        reprojection.on('exit', (code, signal) => {
-            // after successful reprojection, translate back to png
-            var backToPNG = child_process.spawn('gdal_translate', [
-                '-of', 'PNG', `${__dirname}/temp/output.tif`, outputPath
-            ], {shell: true})
-            backToPNG.stderr.on('error', (msg) => {
-                console.log(String(buf));
-            })
-            backToPNG.on('exit', (code, signal) => {
-                // delete temp directory here
-                deleteFolderRecursive(`${__dirname}/temp`)
-                if (callback && typeof(callback) === "function") {
-										// execute callback function
-                    callback();
-                }
-            })
+		})
+		reprojection.on('exit', (code, signal) => {
+			// after successful reprojection, translate back to png
+			var backToPNG = child_process.spawn('gdal_translate', [
+				'-of', 'PNG', `${__dirname}/temp/output.tif`, outputPath
+			], { shell: true })
+			backToPNG.stderr.on('error', (msg) => {
+				console.log(String(buf));
+			})
+			backToPNG.on('exit', (code, signal) => {
+				// delete temp directory here
+				deleteFolderRecursive(`${__dirname}/temp`)
+				if (callback && typeof (callback) === "function") {
+					// execute callback function
+					callback();
+				}
+			})
 
-        })
-    })
+		})
+	})
 }
 
 // delete folder function, taken from http://stackoverflow.com/a/32197381/5660646
-var deleteFolderRecursive = function(path) {
-    if (fs.existsSync(path)) {
-        fs.readdirSync(path).forEach(function(file, index) {
-            var curPath = path + "/" + file;
-            if (fs.lstatSync(curPath).isDirectory()) { // recurse
-                deleteFolderRecursive(curPath);
-            } else { // delete file
-                fs.unlinkSync(curPath);
-            }
-        });
-        fs.rmdirSync(path);
-    }
+var deleteFolderRecursive = function (path) {
+	if (fs.existsSync(path)) {
+		fs.readdirSync(path).forEach(function (file, index) {
+			var curPath = path + "/" + file;
+			if (fs.lstatSync(curPath).isDirectory()) { // recurse
+				deleteFolderRecursive(curPath);
+			} else { // delete file
+				fs.unlinkSync(curPath);
+			}
+		});
+		fs.rmdirSync(path);
+	}
 };
