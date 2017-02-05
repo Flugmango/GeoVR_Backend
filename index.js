@@ -45,17 +45,17 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 		if (!error && response.statusCode == 200) {
 			//country code
 			var countryCode = JSON.parse(body).address.country_code;
-			console.log(countryCode);
+			/*console.log(countryCode);*/
 			//full country name
 			var countryName = find_in_object(countriesJSON, { code: countryCode.toUpperCase() });
 			countryName = countryName[0].name;
-			console.log(countryName);
+			/*console.log(countryName);*/
 
 			var pictureName = countryCode.toUpperCase() + '.png';
 			//var pictureName = countryCode + '.gif'
 			//var flagString = 'http://www.geonames.org/flags/x/' + pictureName.toLowerCase();
 			var flagString = 'http://geognos.com/api/en/countries/flag/' + pictureName;
-			console.log(flagString)
+			/*console.log(flagString)*/
 			request(flagString, function (error, response, body) {
 				if (!error && response.statusCode == 200) {
 					fs.readFile(pictureName, function (err, pic) {
@@ -85,6 +85,7 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 
 												var img = new Image();
 												img.src = new Buffer(pic, 'base64');
+												ctx.globalAlpha = 1;
 												ctx.drawImage(img, 120, 60, img.width, img.height);
 												ctx.font = '90px Impact';
 												ctx.fillText(countryName, 390, 135);
@@ -159,6 +160,55 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 										});
 									}
 
+									break;
+								case "general":
+									var generalString = "https://restcountries.eu/rest/v1/name/" + countryName;
+									request(generalString, function (error, response, body) {
+										if (!error && response.statusCode == 200) {
+											var data = JSON.parse(body);
+											var cap = data[0].capital;
+											var region = data[0].region;
+											var currencies = [];
+											var currencyString = "";
+											for (i in data[0].currencies) {
+												currencies.push(data[0].currencies[i])
+												currencyString = currencyString.concat([data[0].currencies[i] + " "]);
+											}
+											var languages = [];
+											var languageString = "";
+											for (i in data[0].languages) {
+												currencies.push(data[0].languages[i]);
+												languageString = languageString.concat([data[0].languages[i] + " "]);
+											}
+											function draw() {
+												var Canvas = require('canvas')
+													, Image = Canvas.Image
+													, canvas = new Canvas(960, 540)
+													, ctx = canvas.getContext('2d');
+												ctx.globalAlpha = 1;
+												var img = new Image();
+												img.src = new Buffer(pic, 'base64');
+												ctx.drawImage(img, 120, 60, img.width, img.height);
+												ctx.font = '90px Impact';
+												ctx.fillText(countryName, 390, 135);
+												ctx.font = '54px Impact';
+												ctx.fillText('Capital city: ' + cap, 90, 240);
+												ctx.fillText('Languages: ' + languageString, 90, 330);
+												ctx.fillText('Currencies: ' + currencyString, 90, 420);
+												ctx.font = '39px Impact';
+												ctx.fillText('Region: ' + region, 90, 510);
+
+												return canvas;
+											};
+											res.setHeader('Content-Type', 'image/png');
+											draw().pngStream().pipe(res);
+
+										}
+										else {
+											console.log(error);
+											res.sendStatus(500);
+										}
+									});
 									break;
 							};
 						}
