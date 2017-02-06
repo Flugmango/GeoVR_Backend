@@ -107,8 +107,13 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 																var img = new Image();
 																img.src = new Buffer(pic, 'base64');
 																ctx.drawImage(img, 120, 60, img.width, img.height);
-																ctx.font = '80px Helvetica';
-																ctx.fillText(countryName, 340, 135);
+																if (ctx.measureText(countryName).width > 75){
+																	ctx.font = 6000 / (ctx.measureText(countryName).width) + 'px Helvetica';
+																	ctx.fillText(countryName, 340, 135);
+																}else{
+																	ctx.font = '80px Helvetica';
+																	ctx.fillText(countryName, 340, 135);
+																}																
 																ctx.font = '50px Helvetica';
 																ctx.fillText('Current temperature: ' + tempString, 90, 220);
 																ctx.fillText('Current humidity: ' + humiString, 90, 290);
@@ -145,8 +150,13 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 																var img = new Image();
 																img.src = new Buffer(pic, 'base64');
 																ctx.drawImage(img, 120, 60, img.width, img.height);
-																ctx.font = '80px Helvetica';
-																ctx.fillText(countryName, 340, 135);
+																if (ctx.measureText(countryName).width > 75){
+																	ctx.font = 6000 / (ctx.measureText(countryName).width) + 'px Helvetica';
+																	ctx.fillText(countryName, 340, 135);
+																}else{
+																	ctx.font = '80px Helvetica';
+																	ctx.fillText(countryName, 340, 135);
+																}
 																ctx.font = '50px Helvetica';
 																ctx.fillText('Rain in past 3 hours: ' + rainString, 90, 240);
 																ctx.fillText('Current windspeed: ' + windString, 90, 330);
@@ -244,8 +254,13 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 																		var img = new Image();
 																		img.src = new Buffer(pic, 'base64');
 																		ctx.drawImage(img, 120, 60, img.width, img.height);
-																		ctx.font = '80px Helvetica';
-																		ctx.fillText(countryName, 340, 135);
+																		if (ctx.measureText(countryName).width > 75){
+																			ctx.font = 6000 / (ctx.measureText(countryName).width) + 'px Helvetica';
+																			ctx.fillText(countryName, 340, 135);
+																		}else{
+																			ctx.font = '80px Helvetica';
+																			ctx.fillText(countryName, 340, 135);
+																		}
 																		ctx.font = '50px Helvetica';
 																		ctx.fillText('Capital city: ' + cap, 90, 220);
 																		ctx.fillText('Languages: ' + languageString, 90, 290);
