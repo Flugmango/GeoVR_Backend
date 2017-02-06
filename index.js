@@ -323,22 +323,10 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 		}
 
 		else {
-			res.sendStatus(500);
-
-			//try of displaying a nice error message when coordinates not in country
-/*			var Canvas = require('canvas');
-			var canvas = new Canvas(200, 150);
-			var context = canvas.getContext("2d");
-			context.beginPath();
-			context.arc(100, 75, 50, 0, 2 * Math.PI);
-			context.stroke();
-
-			function sendAsPNG(response, canvas) {
-				var stream = canvas.createPNGStream();
-				response.type("png");
-				stream.pipe(response);
-
-			};*/
+			fs.readFile('images/error.png', function(err,data){
+				if (err) throw err;
+			res.end(data);
+			})			
 		};
 	}
 	);
