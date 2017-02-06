@@ -104,6 +104,9 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 																		, canvas = new Canvas(960, 540)
 																		, ctx = canvas.getContext('2d');
 																ctx.globalAlpha = 1;
+																ctx.fillStyle = '#f2f2f2';
+																ctx.fillRect(0,0,canvas.width,canvas.height);
+																ctx.fillStyle = 'black';
 																var img = new Image();
 																img.src = new Buffer(pic, 'base64');
 																ctx.drawImage(img, 120, 60, img.width, img.height);
@@ -146,7 +149,10 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 																		, Image = Canvas.Image
 																		, canvas = new Canvas(960, 540)
 																		, ctx = canvas.getContext('2d');
-																ctx.globalAlpha = 1;			
+																ctx.globalAlpha = 1;
+																ctx.fillStyle = '#f2f2f2';
+																ctx.fillRect(0,0,canvas.width,canvas.height);
+																ctx.fillStyle = 'black';
 																var img = new Image();
 																img.src = new Buffer(pic, 'base64');
 																ctx.drawImage(img, 120, 60, img.width, img.height);
@@ -251,6 +257,9 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 																				, canvas = new Canvas(960, 540)
 																				, ctx = canvas.getContext('2d');
 																		ctx.globalAlpha = 1;
+																		ctx.fillStyle = '#f2f2f2';
+																		ctx.fillRect(0,0,canvas.width,canvas.height);
+																		ctx.fillStyle = 'black';
 																		var img = new Image();
 																		img.src = new Buffer(pic, 'base64');
 																		ctx.drawImage(img, 120, 60, img.width, img.height);
