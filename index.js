@@ -67,161 +67,227 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 			//var flagString = 'http://www.geonames.org/flags/x/' + pictureName.toLowerCase();
 			var flagString = 'http://geognos.com/api/en/countries/flag/' + pictureName;
 			/*console.log(flagString)*/
-			request(flagString, function (error, response, body) {
+				request(flagString, function (error, response, body) {
 				if (!error && response.statusCode == 200) {
-					fs.readFile(pictureName, function (err, pic) {
-						if (err) throw err; // Fail if the file can't be read.
+					fs.readFile(pictureName.toLowerCase(), function (err, pic) {
+						if (err)
+							throw err; // Fail if the file can't be read.
 						else {
-							//data queries depending on type specified in URI
-							switch (type) {
-								case "temperature":
-									// Contact OpenWeatherMap API
-									var weatherString = 'http://api.openweathermap.org/data/2.5/weather?lat=' + lat + '&lon=' + lon + '&appid=' + appid;
-									request(weatherString, function (error, response, body) {
+							var weatherString = 'http://api.openweathermap.org/data/2.5/weather?lat=' + lat + '&lon=' + lon + '&appid=' + appid;
+							request(weatherString, function (error, response, body) {
+								if (!error && response.statusCode == 200) {
+									var data = JSON.parse(body);
+									var weatherStation = data.name;
+									var weatherIcon = data.weather[0].icon;
+									var iconName = weatherIcon + '.png';
+									var weatherIconString = 'http://openweathermap.org/img/w/' + weatherIcon + '.png';
+									request(weatherIconString, function (error, response, body) {
 										if (!error && response.statusCode == 200) {
-											var data = JSON.parse(body);
-											var temp = data.main.temp;
-											var tempString = (parseFloat(temp) - 273.15).toFixed(2) + " °C";
-											var humi = data.main.humidity;
-											var humiString = (parseFloat(humi)) + " %";
-											var weatherStation = data.name;
+											fs.readFile(iconName, function (err, icon) {
+												if (err)
+													throw err; // Fail if the file can't be read.
+												else {
+													//data queries depending on type specified in URI
+													switch (type) {
+														case "temperature":
+															// Contact OpenWeatherMap API
+															var temp = data.main.temp;
+															var tempString = (parseFloat(temp) - 273.15).toFixed(2) + " °C";
+															var humi = data.main.humidity;
+															var humiString = (parseFloat(humi)) + " %";
+															var pressure = data.main.pressure;
+															var pressureString = (parseFloat(pressure)) + " hPa";
 
-											function draw() {
-												//var path = require('path');
-												//var http = require('http');
-												var Canvas = require('canvas')
-													, Image = Canvas.Image
-													, canvas = new Canvas(960, 540)
-													, ctx = canvas.getContext('2d');
+															function drawTemp() {
+																var Canvas = require('canvas')
+																		, Image = Canvas.Image
+																		, canvas = new Canvas(960, 540)
+																		, ctx = canvas.getContext('2d');
+																ctx.globalAlpha = 1;
+																var img = new Image();
+																img.src = new Buffer(pic, 'base64');
+																ctx.drawImage(img, 120, 60, img.width, img.height);
+																ctx.font = '80px Helvetica';
+																ctx.fillText(countryName, 340, 135);
+																ctx.font = '50px Helvetica';
+																ctx.fillText('Current temperature: ' + tempString, 90, 220);
+																ctx.fillText('Current humidity: ' + humiString, 90, 290);
+																ctx.fillText('Current pressure: ' + pressureString, 90, 360);
+																ctx.font = '35px Helvetica';
+																ctx.fillText('Weatherstation in ' + weatherStation, 90, 450);
 
-												var img = new Image();
-												img.src = new Buffer(pic, 'base64');
-												ctx.globalAlpha = 1;
-												ctx.drawImage(img, 120, 60, img.width, img.height);
-												ctx.font = '90px Impact';
-												ctx.fillText(countryName, 390, 135);
-												ctx.font = '54px Impact';
-												ctx.fillText('Current temperature: ' + tempString, 90, 240);
-												ctx.fillText('Current humidity: ' + humiString, 90, 330);
-												ctx.font = '39px Impact';
-												ctx.fillText('Weatherstation in ' + weatherStation, 90, 450);
+																return canvas;
+															}
+															;
+															res.setHeader('Content-Type', 'image/png');
+															drawTemp().pngStream().pipe(res);
+															//res.json(tempString); // Show json in the browser.
+															/*res.end(pic); // Show the picture in the browser.*/
+															//canvas.createPNGStream().pipe(fs.createWriteStream(path.join(__dirname, 'text1.png')));
 
-												return canvas;
-											};
-											res.setHeader('Content-Type', 'image/png');
-											draw().pngStream().pipe(res);
-											//res.json(tempString); // Show json in the browser.
-											/*res.end(pic); // Show the picture in the browser.*/
-											//canvas.createPNGStream().pipe(fs.createWriteStream(path.join(__dirname, 'text1.png')));
+															break;
+														case "rain":
+															var rain = 0;
+															if (data.hasOwnProperty('rain')) {
+																rain = data.rain;
+															}
+															;
+															var rainString = (parseFloat(rain)) + " mm";
+															var wind = data.wind.speed;
+															var windString = (parseFloat(wind)) + " mps";
+
+															function drawRain() {
+																var Canvas = require('canvas')
+																		, Image = Canvas.Image
+																		, canvas = new Canvas(960, 540)
+																		, ctx = canvas.getContext('2d');
+																ctx.globalAlpha = 1;			
+																var img = new Image();
+																img.src = new Buffer(pic, 'base64');
+																ctx.drawImage(img, 120, 60, img.width, img.height);
+																ctx.font = '80px Helvetica';
+																ctx.fillText(countryName, 340, 135);
+																ctx.font = '50px Helvetica';
+																ctx.fillText('Rain in past 3 hours: ' + rainString, 90, 240);
+																ctx.fillText('Current windspeed: ' + windString, 90, 330);
+																var imgIcon = new Image();
+																imgIcon.src = new Buffer(icon, 'base64');
+																ctx.drawImage(imgIcon, 760, 170, imgIcon.width * 2.2, imgIcon.height * 2.2);
+																ctx.font = '35px Helvetica';
+																ctx.fillText('Weatherstation in ' + weatherStation, 90, 450);
+
+																return canvas;
+															}
+															;
+															res.setHeader('Content-Type', 'image/png');
+															drawRain().pngStream().pipe(res);
+															break;
+														case "population":
+															var dates = [];
+															for (i = -3; i < 4; i++) {
+																dates.push(moment().add(i, 'years').format('YYYY-MM-DD'));
+															}
+															var queries = [];
+															for (i = 0; i < 7; i++) {
+																queries.push('http://api.population.io:80/1.0/population/' + countryName + '/' + dates[i] + '/');
+															}
+															var pops = [];
+															completedRequests = 0;
+															for (i in dates) {
+																request(queries[i], function (error, response, body) {
+																	if (!error && response.statusCode == 200) {
+																		var data = JSON.parse(body);
+																		pops.push(data.total_population.population);
+																		completedRequests++;
+																		if (completedRequests == queries.length) {
+																			//plotly graph creation
+																			var data = {x: [], y: [], type: 'scatter'};
+																			for (i in dates) {
+																				data.x.push(moment(dates[i], "YYYY-MM-DD HH:MM:SS"));
+																				data.y.push(pops[i]);
+																			}
+																			var figure = {'data': [data]};
+																			var imgOpts = {
+																				format: 'png',
+																				width: 768,
+																				height: 432
+																			};
+																			plotly.getImage(figure, imgOpts, function (err, imageStream) {
+																				if (err)
+																					return console.log(err);
+																				var fileStream = fs.createWriteStream('graph.png');
+																				imageStream.pipe(fileStream).on('finish', function () {
+																					var graph = fs.readFile('graph.png', function (err, graph) {
+																						if (!err) {
+																							res.writeHead(200, {'Content-Type': 'image/png'});
+																							res.write(graph);
+																							res.end();
+																						}
+																					});
+																				});
+																			});
+																		}
+
+																	} else {
+																		console.log(error);
+																		res.sendStatus(500);
+																	}
+																});
+															}
+
+															break;
+														case "general":
+															var generalString = "https://restcountries.eu/rest/v1/name/" + countryName;
+															request(generalString, function (error, response, body) {
+																if (!error && response.statusCode == 200) {
+																	var data = JSON.parse(body);
+																	var cap = data[0].capital;
+																	var region = data[0].region;
+																	var currencies = [];
+																	var currencyString = "";
+																	for (i in data[0].currencies) {
+																		currencies.push(data[0].currencies[i])
+																		currencyString = currencyString.concat([data[0].currencies[i] + " "]);
+																	}
+																	var languages = [];
+																	var languageString = "";
+																	for (i in data[0].languages) {
+																		currencies.push(data[0].languages[i]);
+																		languageString = languageString.concat([data[0].languages[i] + " "]);
+																	}
+																	function draw() {
+																		var Canvas = require('canvas')
+																				, Image = Canvas.Image
+																				, canvas = new Canvas(960, 540)
+																				, ctx = canvas.getContext('2d');
+																		ctx.globalAlpha = 1;
+																		var img = new Image();
+																		img.src = new Buffer(pic, 'base64');
+																		ctx.drawImage(img, 120, 60, img.width, img.height);
+																		ctx.font = '80px Helvetica';
+																		ctx.fillText(countryName, 340, 135);
+																		ctx.font = '50px Helvetica';
+																		ctx.fillText('Capital city: ' + cap, 90, 220);
+																		ctx.fillText('Languages: ' + languageString, 90, 290);
+																		ctx.fillText('Currencies: ' + currencyString, 90, 360);
+																		ctx.font = '35px Helvetica';
+																		ctx.fillText('Region: ' + region, 90, 450);
+
+																		return canvas;
+																	}
+																	;
+																	res.setHeader('Content-Type', 'image/png');
+																	draw().pngStream().pipe(res);
+
+																}
+																else {
+																	console.log(error);
+																	res.sendStatus(500);
+																}
+															});
+															break;
+
+													}
+													;
+													/*                                  res.writeHead(200, { 'Content-Type': 'image/gif' });*/
+													/*console.log(temperature);*/
+													/*res.end(data);*/ // Send the file data to the browser.
+												}
+											});
+
 										} else {
 											console.log(error);
 											res.sendStatus(500);
 										}
-									});
-									break;
-								case "population":
-									var dates = [];
-									for (i = -3; i < 4; i++) {
-										dates.push(moment().add(i, 'years').format('YYYY-MM-DD'));
-									}
-									var queries = [];
-									for (i = 0; i < 7; i++) {
-										queries.push('http://api.population.io:80/1.0/population/' + countryName + '/' + dates[i] + '/');
-									}
-									var pops = [];
-									completedRequests = 0;
-									for (i in dates) {
-										request(queries[i], function (error, response, body) {
-											if (!error && response.statusCode == 200) {
-												var data = JSON.parse(body);
-												pops.push(data.total_population.population);
-												completedRequests++;
-												if (completedRequests == queries.length) {
-													//plotly graph creation
-													var data = { x: [], y: [], type: 'scatter' };
-													for (i in dates) {
-														data.x.push(moment(dates[i], "YYYY-MM-DD HH:MM:SS"));
-														data.y.push(pops[i]);
-													}
-													var figure = { 'data': [data] };
-													var imgOpts = {
-														format: 'png',
-														width: 768,
-														height: 432
-													};
-													plotly.getImage(figure, imgOpts, function (err, imageStream) {
-														if (err) return console.log(err);
-														var fileStream = fs.createWriteStream('graph.png');
-														imageStream.pipe(fileStream).on('finish', function () {
-															var graph = fs.readFile('graph.png', function (err, graph) {
-																if (!err) {
-																	res.writeHead(200, { 'Content-Type': 'image/png' });
-																	res.write(graph);
-																	res.end();
-																}
-															});
-														});
-													});
-												}
+									}).pipe(fs.createWriteStream(iconName));
+									console.log(iconName + " has been created in the project folder!")
 
-											} else {
-												console.log(error);
-												res.sendStatus(500);
-											}
-										});
-									}
+								} else {
+									console.log(error);
+									res.sendStatus(500);
+								}
+							});
 
-									break;
-								case "general":
-									var generalString = "https://restcountries.eu/rest/v1/name/" + countryName;
-									request(generalString, function (error, response, body) {
-										if (!error && response.statusCode == 200) {
-											var data = JSON.parse(body);
-											var cap = data[0].capital;
-											var region = data[0].region;
-											var currencies = [];
-											var currencyString = "";
-											for (i in data[0].currencies) {
-												currencies.push(data[0].currencies[i])
-												currencyString = currencyString.concat([data[0].currencies[i] + " "]);
-											}
-											var languages = [];
-											var languageString = "";
-											for (i in data[0].languages) {
-												currencies.push(data[0].languages[i]);
-												languageString = languageString.concat([data[0].languages[i] + " "]);
-											}
-											function draw() {
-												var Canvas = require('canvas')
-													, Image = Canvas.Image
-													, canvas = new Canvas(960, 540)
-													, ctx = canvas.getContext('2d');
-												ctx.globalAlpha = 1;
-												var img = new Image();
-												img.src = new Buffer(pic, 'base64');
-												ctx.drawImage(img, 120, 60, img.width, img.height);
-												ctx.font = '90px Impact';
-												ctx.fillText(countryName, 390, 135);
-												ctx.font = '54px Impact';
-												ctx.fillText('Capital city: ' + cap, 90, 240);
-												ctx.fillText('Languages: ' + languageString, 90, 330);
-												ctx.fillText('Currencies: ' + currencyString, 90, 420);
-												ctx.font = '39px Impact';
-												ctx.fillText('Region: ' + region, 90, 510);
-
-												return canvas;
-											};
-											res.setHeader('Content-Type', 'image/png');
-											draw().pngStream().pipe(res);
-
-										}
-										else {
-											console.log(error);
-											res.sendStatus(500);
-										}
-									});
-									break;
-							};
 						}
 					});
 				} else {
