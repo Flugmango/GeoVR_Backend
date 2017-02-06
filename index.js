@@ -40,16 +40,27 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 		console.log('Incorrect params');
 		res.sendStatus(400);
 	}
+	function checkForValue(json, value) {
+		for (key in json) {
+			if (typeof (json[key]) === "object") {
+				return checkForValue(json[key], value);
+			} else if (json[key] === value) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	var code = 'http://open.mapquestapi.com/nominatim/v1/reverse.php?key=' + key + '&format=json&lat=' + lat + '&lon=' + lon;
 	request(code, function (error, response, body) {
-		if (!error && response.statusCode == 200) {
+		if (!error && response.statusCode == 200 && JSON.stringify(body).indexOf('place_id') > -1) {
 			//country code
 			var countryCode = JSON.parse(body).address.country_code;
 			/*console.log(countryCode);*/
 			//full country name
 			var countryName = find_in_object(countriesJSON, { code: countryCode.toUpperCase() });
 			countryName = countryName[0].name;
-			/*console.log(countryName);*/
+			console.log(countryName);
 
 			var pictureName = countryCode.toUpperCase() + '.png';
 			//var pictureName = countryCode + '.gif'
@@ -220,7 +231,27 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 			}).pipe(fs.createWriteStream(pictureName));
 			console.log(pictureName + " has been created in the project folder!");
 		}
-	});
+
+		else {
+			res.sendStatus(500);
+
+			//try of displaying a nice error message when coordinates not in country
+/*			var Canvas = require('canvas');
+			var canvas = new Canvas(200, 150);
+			var context = canvas.getContext("2d");
+			context.beginPath();
+			context.arc(100, 75, 50, 0, 2 * Math.PI);
+			context.stroke();
+
+			function sendAsPNG(response, canvas) {
+				var stream = canvas.createPNGStream();
+				response.type("png");
+				stream.pipe(response);
+
+			};*/
+		};
+	}
+	);
 
 	// help function for filtering json
 	function find_in_object(my_object, my_criteria) {
