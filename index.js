@@ -7,6 +7,7 @@ var fs = require('fs');
 var moment = require('moment');
 var child_process = require('child_process');
 var countriesJSON = require('./js/countries.json');
+var http = require('http');
 
 var app = express();
 
@@ -67,7 +68,7 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 			//var flagString = 'http://www.geonames.org/flags/x/' + pictureName.toLowerCase();
 			var flagString = 'http://geognos.com/api/en/countries/flag/' + pictureName;
 			/*console.log(flagString)*/
-				request(flagString, function (error, response, body) {
+			request(flagString, function (error, response, body) {
 				if (!error && response.statusCode == 200) {
 					fs.readFile(pictureName, function (err, pic) {
 						if (err)
@@ -100,23 +101,23 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 
 															function drawTemp() {
 																var Canvas = require('canvas')
-																		, Image = Canvas.Image
-																		, canvas = new Canvas(960, 540)
-																		, ctx = canvas.getContext('2d');
+																	, Image = Canvas.Image
+																	, canvas = new Canvas(960, 540)
+																	, ctx = canvas.getContext('2d');
 																ctx.globalAlpha = 1;
 																ctx.fillStyle = '#f2f2f2';
-																ctx.fillRect(0,0,canvas.width,canvas.height);
+																ctx.fillRect(0, 0, canvas.width, canvas.height);
 																ctx.fillStyle = 'black';
 																var img = new Image();
 																img.src = new Buffer(pic, 'base64');
 																ctx.drawImage(img, 120, 60, img.width, img.height);
-																if (ctx.measureText(countryName).width > 75){
+																if (ctx.measureText(countryName).width > 75) {
 																	ctx.font = 6000 / (ctx.measureText(countryName).width) + 'px Helvetica';
 																	ctx.fillText(countryName, 340, 135);
-																}else{
+																} else {
 																	ctx.font = '80px Helvetica';
 																	ctx.fillText(countryName, 340, 135);
-																}																
+																}
 																ctx.font = '50px Helvetica';
 																ctx.fillText('Current temperature: ' + tempString, 90, 220);
 																ctx.fillText('Current humidity: ' + humiString, 90, 290);
@@ -146,20 +147,20 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 
 															function drawRain() {
 																var Canvas = require('canvas')
-																		, Image = Canvas.Image
-																		, canvas = new Canvas(960, 540)
-																		, ctx = canvas.getContext('2d');
+																	, Image = Canvas.Image
+																	, canvas = new Canvas(960, 540)
+																	, ctx = canvas.getContext('2d');
 																ctx.globalAlpha = 1;
 																ctx.fillStyle = '#f2f2f2';
-																ctx.fillRect(0,0,canvas.width,canvas.height);
+																ctx.fillRect(0, 0, canvas.width, canvas.height);
 																ctx.fillStyle = 'black';
 																var img = new Image();
 																img.src = new Buffer(pic, 'base64');
 																ctx.drawImage(img, 120, 60, img.width, img.height);
-																if (ctx.measureText(countryName).width > 75){
+																if (ctx.measureText(countryName).width > 75) {
 																	ctx.font = 6000 / (ctx.measureText(countryName).width) + 'px Helvetica';
 																	ctx.fillText(countryName, 340, 135);
-																}else{
+																} else {
 																	ctx.font = '80px Helvetica';
 																	ctx.fillText(countryName, 340, 135);
 																}
@@ -188,21 +189,26 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 																queries.push('http://api.population.io:80/1.0/population/' + countryName + '/' + dates[i] + '/');
 															}
 															var pops = [];
-															completedRequests = 0;
-															for (i in dates) {
-																request(queries[i], function (error, response, body) {
-																	if (!error && response.statusCode == 200) {
-																		var data = JSON.parse(body);
+															// call population number synchronous
+															function synchAPICalls(queries) {
+																var url = queries.shift();
+																http.get(url, function (res) {	
+																	res.on('data', function (d) {
+																		console.log('data')
+																		var data = JSON.parse(d);
 																		pops.push(data.total_population.population);
-																		completedRequests++;
-																		if (completedRequests == queries.length) {
-																			//plotly graph creation
-																			var data = {x: [], y: [], type: 'scatter'};
+																	});
+																	res.on('end', function () {
+																		console.log('end')
+																		if (queries.length) {
+																			synchAPICalls(queries);
+																		} else { // when all queries have been called')
+																			var data = { x: [], y: [], type: 'scatter' };
 																			for (i in dates) {
 																				data.x.push(moment(dates[i], "YYYY-MM-DD HH:MM:SS"));
 																				data.y.push(pops[i]);
 																			}
-																			var figure = {'data': [data]};
+																			var figure = { 'data': [data] };																			
 																			var imgOpts = {
 																				format: 'png',
 																				width: 768,
@@ -215,21 +221,20 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 																				imageStream.pipe(fileStream).on('finish', function () {
 																					var graph = fs.readFile('graph.png', function (err, graph) {
 																						if (!err) {
-																							res.writeHead(200, {'Content-Type': 'image/png'});
+																							console.log("population graph added");
+																							/*res.writeHead(200, { 'Content-Type': 'image/png' });
 																							res.write(graph);
-																							res.end();
+																							res.end();*/
 																						}
 																					});
 																				});
 																			});
 																		}
-
-																	} else {
-																		console.log(error);
-																		res.sendStatus(500);
-																	}
-																});
+																	})
+																
+																}) 
 															}
+															synchAPICalls(queries);
 
 															break;
 														case "general":
@@ -253,20 +258,20 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 																	}
 																	function draw() {
 																		var Canvas = require('canvas')
-																				, Image = Canvas.Image
-																				, canvas = new Canvas(960, 540)
-																				, ctx = canvas.getContext('2d');
+																			, Image = Canvas.Image
+																			, canvas = new Canvas(960, 540)
+																			, ctx = canvas.getContext('2d');
 																		ctx.globalAlpha = 1;
 																		ctx.fillStyle = '#f2f2f2';
-																		ctx.fillRect(0,0,canvas.width,canvas.height);
+																		ctx.fillRect(0, 0, canvas.width, canvas.height);
 																		ctx.fillStyle = 'black';
 																		var img = new Image();
 																		img.src = new Buffer(pic, 'base64');
 																		ctx.drawImage(img, 120, 60, img.width, img.height);
-																		if (ctx.measureText(countryName).width > 75){
+																		if (ctx.measureText(countryName).width > 75) {
 																			ctx.font = 6000 / (ctx.measureText(countryName).width) + 'px Helvetica';
 																			ctx.fillText(countryName, 340, 135);
-																		}else{
+																		} else {
 																			ctx.font = '80px Helvetica';
 																			ctx.fillText(countryName, 340, 135);
 																		}
@@ -291,11 +296,8 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 															});
 															break;
 
-													}
-													;
-													/*                                  res.writeHead(200, { 'Content-Type': 'image/gif' });*/
-													/*console.log(temperature);*/
-													/*res.end(data);*/ // Send the file data to the browser.
+													};
+
 												}
 											});
 
@@ -323,10 +325,10 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 		}
 
 		else {
-			fs.readFile('images/error.png', function(err,data){
+			fs.readFile('images/error.png', function (err, data) {
 				if (err) throw err;
-			res.end(data);
-			})			
+				res.end(data);
+			})
 		};
 	}
 	);
