@@ -2,7 +2,7 @@ var request = require('request');
 var fs = require('fs');
 var child_process = require('child_process');
 
-var outputsFolder = `${__dirname}/../outputs/`
+var outputsFolder = `${__dirname}/../outputs`
 
 // these are the supported formats
 exports.allowedTypes = ['temp', 'pressure', 'wind', 'precipitation']
@@ -12,7 +12,7 @@ exports.saveOverlay = function(type, callback) {
     // getting image from url
 
     request.get(getImageUrl(type)).on('response', function(response) {
-        console.log(response.statusCode) // 200
+        console.log([(new Date).toISOString()], `response code: ${response.statusCode}`)
     }).on('error', function(err) {
         console.log(err)
     }).pipe(fs.createWriteStream(`${outputsFolder}/${type}.png`)).on('finish', function(err) {
@@ -27,6 +27,7 @@ exports.saveOverlay = function(type, callback) {
 }
 // return the correct image url depending on type
 function getImageUrl(type) {
+  console.log([(new Date).toISOString()], `getting tile of type ${type}`)
     //return `http://a.tile.openweathermap.org/map/${type}/0/0/0.png`
     switch (type) {
         case 'wind':
@@ -46,6 +47,8 @@ function getImageUrl(type) {
 
 // reprojects the image with GDAL
 function reprojectImage(inputPath, outputPath, callback) {
+  console.log([(new Date).toISOString()], `start reprojecting image...`)
+    console.log([(new Date).toISOString()], `creating temporary folder`)
     // create temp directory
     fs.mkdir(`${outputsFolder}/temp`, (err) => {
       if (err)
@@ -98,6 +101,8 @@ function reprojectImage(inputPath, outputPath, callback) {
                 console.log(String(buf));
             })
             backToPNG.on('exit', (code, signal) => {
+              console.log([(new Date).toISOString()], `... finished reprojecting`)
+              console.log([(new Date).toISOString()], `deleting temporary folder`)
                 // delete temp directory here
                 deleteFolderRecursive(`${outputsFolder}/temp`)
                 if (callback && typeof(callback) === "function") {

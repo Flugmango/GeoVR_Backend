@@ -350,6 +350,7 @@ app.get('/overlay/:type', function (req, res) {
 	if (overlayBuilder.allowedTypes.includes(type))
 		overlayBuilder.saveOverlay(type, (outputPath) => {
 			var img = fs.readFileSync(outputPath);
+			console.log([(new Date).toISOString()], `saved image to ${outputPath}`)
 			res.writeHead(200, { 'Content-Type': 'image/png' });
 			res.end(img, 'binary');
 		})
