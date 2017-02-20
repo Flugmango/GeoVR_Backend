@@ -138,7 +138,7 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 														case "rain":
 															var rain = 0;
 															if (data.hasOwnProperty('rain')) {
-																rain = data.rain;
+																rain = data.rain["3h"];
 															}
 															;
 															var rainString = (parseFloat(rain)) + " mm";
@@ -169,7 +169,7 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 																ctx.fillText('Current windspeed: ' + windString, 90, 330);
 																var imgIcon = new Image();
 																imgIcon.src = new Buffer(icon, 'base64');
-																ctx.drawImage(imgIcon, 760, 170, imgIcon.width * 2.2, imgIcon.height * 2.2);
+																ctx.drawImage(imgIcon, 800, 170, imgIcon.width * 2.2, imgIcon.height * 2.2);
 																ctx.font = '35px Helvetica';
 																ctx.fillText('Weatherstation in ' + weatherStation, 90, 450);
 
