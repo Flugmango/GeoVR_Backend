@@ -4,7 +4,6 @@
 - requires [nodejs](https://nodejs.org) (tested with v6.10)
     - NodeJS Dependencies:
         - [body-parser](https://www.npmjs.com/package/body-parser)
-        - [canvas](https://www.npmjs.com/package/canvas)
         - [express](https://www.npmjs.com/package/express)
         - [moment](https://www.npmjs.com/package/moment)
         - [plotly](https://www.npmjs.com/package/plotly)
