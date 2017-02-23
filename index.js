@@ -110,17 +110,17 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 																img.src = new Buffer(pic, 'base64');
 																ctx.drawImage(img, 120, 60, img.width, img.height);
 																if (ctx.measureText(countryName).width > 75) {
-																	ctx.font = 6000 / (ctx.measureText(countryName).width) + 'px Helvetica';
+																	ctx.font = 5500 / (ctx.measureText(countryName).width) + 'px "DejaVu Sans"';
 																	ctx.fillText(countryName, 340, 135);
 																} else {
-																	ctx.font = '80px Helvetica';
+																	ctx.font = '80px "DejaVu Sans"';
 																	ctx.fillText(countryName, 340, 135);
 																}
-																ctx.font = '50px Helvetica';
+																ctx.font = '45px "DejaVu Sans"';
 																ctx.fillText('Current temperature: ' + tempString, 90, 220);
 																ctx.fillText('Current humidity: ' + humiString, 90, 290);
 																ctx.fillText('Current pressure: ' + pressureString, 90, 360);
-																ctx.font = '35px Helvetica';
+																ctx.font = '31px "DejaVu Sans"';
 																ctx.fillText('Weatherstation in ' + weatherStation, 90, 450);
 
 																return canvas;
@@ -156,19 +156,19 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 																img.src = new Buffer(pic, 'base64');
 																ctx.drawImage(img, 120, 60, img.width, img.height);
 																if (ctx.measureText(countryName).width > 75) {
-																	ctx.font = 6000 / (ctx.measureText(countryName).width) + 'px Helvetica';
+																	ctx.font = 5500 / (ctx.measureText(countryName).width) + 'px "DejaVu Sans"';
 																	ctx.fillText(countryName, 340, 135);
 																} else {
-																	ctx.font = '80px Helvetica';
+																	ctx.font = '80px "DejaVu Sans"';
 																	ctx.fillText(countryName, 340, 135);
 																}
-																ctx.font = '50px Helvetica';
+																ctx.font = '45px "DejaVu Sans"';
 																ctx.fillText('Rain in past 3 hours: ' + rainString, 90, 240);
 																ctx.fillText('Current windspeed: ' + windString, 90, 330);
 																var imgIcon = new Image();
 																imgIcon.src = new Buffer(icon, 'base64');
 																ctx.drawImage(imgIcon, 800, 170, imgIcon.width * 2.2, imgIcon.height * 2.2);
-																ctx.font = '35px Helvetica';
+																ctx.font = '31px "DejaVu Sans"';
 																ctx.fillText('Weatherstation in ' + weatherStation, 90, 450);
 
 																return canvas;
@@ -267,17 +267,17 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 																		img.src = new Buffer(pic, 'base64');
 																		ctx.drawImage(img, 120, 60, img.width, img.height);
 																		if (ctx.measureText(countryName).width > 75) {
-																			ctx.font = 6000 / (ctx.measureText(countryName).width) + 'px Helvetica';
+																			ctx.font = 5500 / (ctx.measureText(countryName).width) + 'px "DejaVu Sans"';
 																			ctx.fillText(countryName, 340, 135);
 																		} else {
-																			ctx.font = '80px Helvetica';
+																			ctx.font = '80px "DejaVu Sans"';
 																			ctx.fillText(countryName, 340, 135);
 																		}
-																		ctx.font = '50px Helvetica';
+																		ctx.font = '45px "DejaVu Sans"';
 																		ctx.fillText('Capital city: ' + cap, 90, 220);
 																		ctx.fillText('Languages: ' + languageString, 90, 290);
 																		ctx.fillText('Currencies: ' + currencyString, 90, 360);
-																		ctx.font = '35px Helvetica';
+																		ctx.font = '31px "DejaVu Sans"';
 																		ctx.fillText('Region: ' + region, 90, 450);
 
 																		return canvas;
