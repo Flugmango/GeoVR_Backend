@@ -1,5 +1,3 @@
-/* Welcome to the index.js of our backend */
-
 var express = require('express');
 var bodyParser = require('body-parser');
 var request = require('request');
@@ -26,7 +24,7 @@ app.listen(3000, function () {
 })
 
 
-/* Routes */
+// Routes for the services 
 
 app.get('/getData/:lat/:lon/:type', function (req, res) {
 	// Parse our values as integer
@@ -50,20 +48,18 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 		return false;
 	}
 
+	// service to transform coordinates into country code
 	var code = 'http://open.mapquestapi.com/nominatim/v1/reverse.php?key=' + key + '&format=json&lat=' + lat + '&lon=' + lon;
 	request(code, function (error, response, body) {
 		if (!error && response.statusCode == 200 && JSON.stringify(body).indexOf('place_id') > -1) {
 			//country code
 			var countryCode = JSON.parse(body).address.country_code;
-			/*console.log(countryCode);*/
 			//full country name
 			var countryName = find_in_object(countriesJSON, { code: countryCode.toUpperCase() });
 			countryName = countryName[0].name;
-			console.log(countryName);
 
 			var pictureName = countryCode.toUpperCase() + '.png';
-			//var pictureName = countryCode + '.gif'
-			//var flagString = 'http://www.geonames.org/flags/x/' + pictureName.toLowerCase();
+			// request the flag to the corresponding country code
 			var flagString = 'http://geognos.com/api/en/countries/flag/' + pictureName;
 			/*console.log(flagString)*/
 			request(flagString, function (error, response, body) {
@@ -72,6 +68,7 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 						if (err)
 							throw err; // Fail if the file can't be read.
 						else {
+							// request a JSON with weather information
 							var weatherString = 'http://api.openweathermap.org/data/2.5/weather?lat=' + lat + '&lon=' + lon + '&appid=' + appid;
 							request(weatherString, function (error, response, body) {
 								if (!error && response.statusCode == 200) {
@@ -79,6 +76,7 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 									var weatherStation = data.name;
 									var weatherIcon = data.weather[0].icon;
 									var iconName = weatherIcon + '.png';
+									// request the current weathericon to the corresponding location
 									var weatherIconString = 'http://openweathermap.org/img/w/' + weatherIcon + '.png';
 									request(weatherIconString, function (error, response, body) {
 										if (!error && response.statusCode == 200) {
@@ -96,7 +94,8 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 															var humiString = (parseFloat(humi)) + " %";
 															var pressure = data.main.pressure;
 															var pressureString = (parseFloat(pressure)) + " hPa";
-
+															
+															// function to created a PNG containing information with canvas
 															function drawTemp() {
 																var Canvas = require('canvas')
 																	, Image = Canvas.Image
@@ -128,9 +127,6 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 															;
 															res.setHeader('Content-Type', 'image/png');
 															drawTemp().pngStream().pipe(res);
-															//res.json(tempString); // Show json in the browser.
-															/*res.end(pic); // Show the picture in the browser.*/
-															//canvas.createPNGStream().pipe(fs.createWriteStream(path.join(__dirname, 'text1.png')));
 
 															break;
 														case "rain":
@@ -143,6 +139,7 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 															var wind = data.wind.speed;
 															var windString = (parseFloat(wind)) + " mps";
 
+															// function to created a PNG containing information with canvas
 															function drawRain() {
 																var Canvas = require('canvas')
 																	, Image = Canvas.Image
@@ -236,6 +233,7 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 
 															break;
 														case "general":
+															// request general country information using the country name
 															var generalString = "https://restcountries.eu/rest/v1/name/" + countryName;
 															request(generalString, function (error, response, body) {
 																if (!error && response.statusCode == 200) {
@@ -254,6 +252,8 @@ app.get('/getData/:lat/:lon/:type', function (req, res) {
 																		currencies.push(data[0].languages[i]);
 																		languageString = languageString.concat([data[0].languages[i] + " "]);
 																	}
+																	
+																	// function to created a PNG containing information with canvas
 																	function draw() {
 																		var Canvas = require('canvas')
 																			, Image = Canvas.Image
